@@ -4,7 +4,7 @@
 
 ## What's broken
 
-We have a click-detection pipeline that watches gaze stability and fires a CLICK event when the user dwells. Problem: it's double-clicking. Two CLICKs appear ~120ms apart sometimes.
+We have a click-detection pipeline that watches gaze stability and fires a CLICK event when the user dwells. Problem: it's double-clicking. Two CLICKs appear less than 300ms apart sometimes.
 
 Rule: minimum 300ms between clicks.
 
