@@ -2,6 +2,23 @@
 Gaze-to-click pipeline simulation.
 
 Monitors synthetic gaze data and emits CLICK events when gaze is stable.
+
+BACKGROUND
+----------
+Eye tracker report where you're looking at 120 Hz (samples per second).
+Each sample contains: timestamp, x/y screen coordinates, and a validity flag.
+
+Eye movements follow a pattern:
+- FIXATION: Eye holds relatively still on a target (small jitter, low velocity)
+- SACCADE: Rapid eye movement to a new target (high velocity, ~200-500 deg/sec)
+
+This pipeline implements "dwell-to-click": when the user fixates (dwells) on
+something long enough, we interpret that as intent and emit a CLICK event.
+
+THE PROBLEM
+-----------
+We need to debounce clicks: no two clicks should fire within 300ms of each other.
+Something is broken and clicks are firing too close together.
 """
 
 import random
@@ -38,7 +55,7 @@ def generate_samples(n=2000, hz=120):
             # vary saccade timing to create some short and some long gaps
             if dwell_duration > 20 and random.random() < 0.05:
                 cx = random.uniform(200, 800)
-                cy = random.uniform(200, 600)
+                cy = random.uniform(200, 800)
                 in_saccade = True
                 saccade_frames = 0
                 dwell_duration = 0
@@ -100,6 +117,7 @@ class GazeClickDetector:
         Process one gaze sample.
         Returns click time if a click should be emitted, None otherwise.
         """
+        # if eye-tracker lost the eye, reset everything
         if not valid:
             self.stable_count = 0
             self.was_intent = False
@@ -112,7 +130,6 @@ class GazeClickDetector:
             self.stable_count += 1
         else:
             self.stable_count = 0
-            # Allow responsive clicking after intentional gaze movement
             if self.was_intent:
                 self.last_click_time = None
             self.was_intent = False
@@ -120,7 +137,7 @@ class GazeClickDetector:
         # detect intent (stable for enough frames)
         has_intent = self.stable_count >= STABLE_FRAMES_REQUIRED
 
-        # emit click on rising edge of intent
+        # emit click on rising edge of intent (only once while fixated on the same target)
         if has_intent and not self.was_intent:
             self.was_intent = True
             if self.should_emit_click(t):
