@@ -24,10 +24,8 @@ class TestClickDebounce(unittest.TestCase):
                     f"Clicks {i} and {i+1}: gap={gap_ms:.1f}ms (min={MIN_CLICK_INTERVAL_MS}ms)"
                 )
 
-        self.assertEqual(
-            violations, [],
-            f"Found {len(violations)} double-click violation(s):\n" + "\n".join(violations)
-        )
+        if violations:
+            self.fail(f"Found {len(violations)} double-click violation(s):\n" + "\n".join(violations))
 
     def test_clicks_are_monotonic(self):
         """Click timestamps should be strictly increasing."""
