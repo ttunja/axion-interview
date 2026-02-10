@@ -112,6 +112,9 @@ class GazeClickDetector:
             self.stable_count += 1
         else:
             self.stable_count = 0
+            # Allow responsive clicking after intentional gaze movement
+            if self.was_intent:
+                self.last_click_time = None
             self.was_intent = False
 
         # detect intent (stable for enough frames)
